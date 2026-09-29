@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+                <style>.lw { font-size: 60px; font-family: Arial, Helvetica, sans-serif; }</style>
+            <style>
+      html, body { height: 100%; margin: 0; padding: 0; background: #000; overflow: hidden; }
+      #globe-container { width: 100%; height: 100%; }
+    </style><script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script><script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script><style>
+      #gl-infoBox{display:none;position:absolute;top:20px;left:20px;width:320px;max-height:calc(100vh - 40px);background:rgba(25,25,25,0.85);color:white;border:1px solid #444;border-radius:12px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.7);overflow-y:auto;z-index:100;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;transition:all 0.3s ease;}
+      #gl-infoBox img{width:100%;height:auto;border-radius:8px;margin-bottom:15px;border:1px solid #555;}
+      #gl-infoBox h3{margin-top:0;margin-bottom:15px;color:#ffb700;font-size:1.4em;}
+      #gl-infoBox h4{margin-top:20px;margin-bottom:5px;color:#888;border-bottom:1px solid #444;padding-bottom:5px;font-size:0.9em;text-transform:uppercase;letter-spacing:0.5px;}
+      #gl-infoBox p{margin-top:0;line-height:1.6;color:#ccc;}
+      #gl-closeButton, #gl-resetButton{position:absolute;width:30px;height:30px;background:rgba(0,0,0,0.5);color:white;border:1px solid #777;border-radius:50%;text-align:center;cursor:pointer;font-weight:700;font-size:16px;user-select:none;z-index:101;transition:all 0.2s ease;}
+      #gl-closeButton{top:15px;right:15px;line-height:28px;}
+      #gl-resetButton{top:20px; right: 20px; line-height:30px; font-size:18px;}
+      #gl-closeButton:hover, #gl-resetButton:hover{background:#ffb700;color:#000;transform:scale(1.1);}
+      #gl-title{position:absolute;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-size:1.5em;font-weight:300;text-shadow:0 0 10px rgba(0,0,0,0.8);z-index:50;pointer-events:none;text-align:center;}
+      #gl-developer{position:absolute;bottom:15px;right:15px;font-size:0.8em;color:#aaa;z-index:50;}
+      @media (max-width: 500px) {
+        #gl-infoBox { width: calc(100% - 40px); left: 50%; top: auto; bottom: 20px; transform: translateX(-50%); max-height: 45vh; }
+        #gl-title { font-size: 1.1em; width: 90%; }
+        #gl-resetButton { top: auto; bottom: 20px; }
+        #gl-developer { font-size: 0.7em; bottom: 5px; right: 5px; }
+      }</style></head>
+            <body style="cursor: default;">
+                <script>(function installLiveweaveConsoleBridge() {
+        if (window.__liveweaveConsoleBridge) return;
+        window.__liveweaveConsoleBridge = true;
+
+        function format(value) {
+            if (typeof value === 'string') return value;
+            if (typeof value === 'undefined') return 'undefined';
+            if (typeof value === 'function') return value.toString();
+            if (value instanceof Error) return value.name + ': ' + value.message;
+            if (value instanceof Element) return value.outerHTML;
+            try {
+                var seen = [];
+                return JSON.stringify(value, function(key, item) {
+                    if (typeof item === 'object' && item !== null) {
+                        if (seen.indexOf(item) !== -1) return '[Circular]';
+                        seen.push(item);
+                    }
+                    return item;
+                }, 2);
+            } catch (err) {
+                return String(value);
+            }
+        }
+
+        function send(type, values, id) {
+            parent.postMessage({
+                source: 'liveweave-preview-console',
+                type: type,
+                id: id || '',
+                values: (values || []).map(format)
+            }, '*');
+        }
+
+        ['log', 'info', 'warn', 'error', 'debug'].forEach(function(level) {
+            var original = console[level];
+            console[level] = function() {
+                var args = Array.prototype.slice.call(arguments);
+                send(level === 'log' || level === 'debug' ? 'log' : level, args);
+                if (original) original.apply(console, args);
+            };
+        });
+
+        window.addEventListener('error', function(event) {
+            send('error', [event.message + (event.lineno ? ' (line ' + event.lineno + ')' : '')]);
+        });
+        window.addEventListener('unhandledrejection', function(event) {
+            send('error', ['Unhandled promise rejection:', event.reason]);
+        });
+        window.addEventListener('message', function(event) {
+            var message = event.data || {};
+            if (event.source !== parent || message.source !== 'liveweave-parent-console' || message.type !== 'evaluate') return;
+            try {
+                var result = (0, eval)(message.code);
+                Promise.resolve(result).then(function(value) {
+                    send('result', [value], message.id);
+                }, function(error) {
+                    send('error', [error], message.id);
+                });
+            } catch (error) {
+                send('error', [error], message.id);
+            }
+        });
+        send('ready', []);
+    })();</script>
+                <script>(function installPreviewLinkGuard() {
+        var noticeTimer;
+
+        function showNotice(message) {
+            var notice = document.getElementById('lw-preview-link-notice');
+            if (!notice) {
+                notice = document.createElement('div');
+                notice.id = 'lw-preview-link-notice';
+                notice.setAttribute('role', 'status');
+                notice.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:2147483647;max-width:calc(100% - 24px);padding:10px 14px;border-radius:9px;background:#17212d;color:#fff;font:13px/1.4 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;';
+                document.body.appendChild(notice);
+            }
+            notice.textContent = message;
+            notice.hidden = false;
+            clearTimeout(noticeTimer);
+            noticeTimer = setTimeout(function() { notice.hidden = true; }, 3500);
+        }
+
+        document.addEventListener('click', function(event) {
+            var link = event.target.closest && event.target.closest('a[href]');
+            if (!link || event.defaultPrevented) return;
+
+            var href = (link.getAttribute('href') || '').trim();
+            if (href.charAt(0) === '#') {
+                event.preventDefault();
+                var fragment = href.slice(1);
+                if (!fragment) {
+                    window.scrollTo(0, 0);
+                    return;
+                }
+                try { fragment = decodeURIComponent(fragment); } catch (error) {}
+                var target = document.getElementById(fragment) || document.getElementsByName(fragment)[0];
+                if (target) target.scrollIntoView();
+                return;
+            }
+
+            if (/^(https?:)?\/\//i.test(href)) {
+                event.preventDefault();
+                window.open(href, '_blank', 'noopener,noreferrer');
+                return;
+            }
+
+            if (/^(mailto:|tel:)/i.test(href)) return;
+
+            event.preventDefault();
+            showNotice('This page cannot be opened in the preview.');
+        }, true);
+    })();</script>
+                
+	
+	<center><h1 style="color:red;">Interactive travelling platform<br>Developer: Oscar SIN</h1></center>    
+ 
+	<div id="globe-container" style="width: 100%; height: 100%;"><canvas width="1860" height="886" style="display: block; width: 930px; height: 443px;"></canvas></div>
+	<script src="https://cdn.jsdelivr.net/gh/digimarketingai/EZ-Globe.js/globe-bundle.js" defer=""></script>
+    
+	<script>
+    	const DEMO_SPOTS = [
+        	{
+            	"name": "Giza Pyramid Complex",
+            	"lat": 29.9772,
+            	"lon": 31.1299,
+            	"desc_en": "The Giza pyramid complex (also called the Giza necropolis) in Egypt is home to the Great Pyramid, the pyramid of Khafre, and the pyramid of Menkaure.",
+            	"desc_zh": "位於埃及的吉薩金字塔群（亦稱吉薩墓地）內，坐落著大金字塔、卡夫拉金字塔以及孟卡拉金字塔。",
+            	"image_url": "https://upload.wikimedia.org/wikipedia/commons/9/96/Pyramids_of_the_Giza_Necropolis.jpg"
+        	},
+        	{
+             	"name": "Great Wall",
+            	"lat": 40.4107332,
+            	"lon": 115.9648371,
+            	"desc_en": "This is a goooooood place~~~~",
+            	"desc_zh": "這是好地方～",
+            	"image_url": "https://upload.wikimedia.org/wikipedia/commons/2/23/The_Great_Wall_of_China_at_Jinshanling-edit.jpg"
+        	},
+            {
+        "name": "Eiffel Tower",
+        "lat": 48.8584,
+        "lon": 2.2945,
+        "desc_en": "A wrought-iron lattice tower on the Champ de Mars in Paris, France, named after engineer Gustave Eiffel.",
+        "desc_zh": "位於法國巴黎戰神廣場的鐵塔，以其設計者古斯塔夫·艾菲爾命名，是巴黎的標誌性地標。",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/85/Tour_Eiffel_Wikimedia_Commons_%28cropped%29.jpg"
+    },
+    {
+        "name": "Great Wall of China",
+        "lat": 40.4319,
+        "lon": 116.5704,
+        "desc_en": "A series of fortifications built across the historical northern borders of ancient Chinese states and Imperial China.",
+        "desc_zh": "萬里長城是中國古代為抵禦游牧民族侵襲而修建的浩大軍事防禦工程。",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/2/23/The_Great_Wall_of_China_at_Jinshanling-edit.jpg"
+    },{
+        "name": "Taj Mahal",
+        "lat": 27.1751,
+        "lon": 78.0421,
+        "desc_en": "An ivory-white marble mausoleum on the right bank of the river Yamuna in Agra, India, commissioned by Shah Jahan.",
+        "desc_zh": "位於印度阿格拉亞穆納河右岸的大理石陵墓，由莫臥兒皇帝沙賈漢為紀念其愛妻而建。",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/1d/TAJ_MAHAL_at_SUNSET%2C_AGRA%2C_INDIA.jpg"
+    },
+    {
+        "name": "Colosseum",
+        "lat": 41.8902,
+        "lon": 12.4922,
+        "desc_en": "An oval amphitheatre in the centre of the city of Rome, Italy, the largest ancient amphitheatre ever built.",
+        "desc_zh": "位於義大利羅馬市中心的橢圓形角鬥場，是古羅馬時期最大的露天劇場。",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/de/Colosseo_2020.jpg"
+    },
+    {
+        "name": "Statue of Liberty",
+        "lat": 40.6892,
+        "lon": -74.0445,
+        "desc_en": "A colossal neoclassical sculpture on Liberty Island in New York Harbor in New York City.",
+        "desc_zh": "位於美國紐約港自由島上的巨型古典主義雕像，是自由與美國的象徵。",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Statue_of_Liberty_7.jpg"
+    },
+    {
+        "name": "Machu Picchu",
+        "lat": -13.1631,
+        "lon": -72.5450,
+        "desc_en": "A 15th-century Inca citadel located in the Eastern Cordillera of southern Peru on a mountain ridge.",
+        "desc_zh": "位於秘魯南部安地斯山脈的高山古城，為15世紀印加帝國的遺蹟。",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Machu_Picchu%2C_Peru.jpg"
+    },
+    {
+        "name": "Sydney Opera House",
+        "lat": -33.8568,
+        "lon": 151.2153,
+        "desc_en": "A multi-venue performing arts centre at Sydney Harbour in Sydney, New South Wales, Australia.",
+        "desc_zh": "位於澳洲雪梨港雪梨灣的表演藝術中心，以其獨特的帆船造型聞名世界。",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/a/a0/Sydney_Australia._%2821339175489%29.jpg"
+    }
+    	]
+	</script>    
+	
+    
+
+                <script>// Write JavaScript here</script>
+            
+        
+    
+      <div id="gl-ui-container">
+        <div id="gl-infoBox" style="display: block;">
+          <div id="gl-closeButton">×</div>
+          <h3 id="gl-infoName">Colosseum</h3>
+          <img id="gl-infoImage" src="https://upload.wikimedia.org/wikipedia/commons/d/de/Colosseo_2020.jpg" alt="Location Image">
+          <h4>Description</h4>
+          <p id="gl-infoDescEn">An oval amphitheatre in the centre of the city of Rome, Italy, the largest ancient amphitheatre ever built.</p>
+          <h4>介绍</h4>
+          <p id="gl-infoDescZh">位於義大利羅馬市中心的橢圓形角鬥場，是古羅馬時期最大的露天劇場。</p>
+        </div>
+        <div id="gl-resetButton">⟲</div>
+        
+        
+      </div>
+    </body>
